@@ -208,11 +208,16 @@ ${cubSections}
     // ── Button Injection ──────────────────────────────────────────────────────
 
     function injectButton() {
-        if (document.getElementById('st-print-btn')) return;
-        const heading = document.querySelector('h1.name');
-        if (!heading || heading.textContent.trim() !== 'Ready to Demonstrate') return;
+        const isRtd = [...document.querySelectorAll('h1.name')]
+            .some(h => h.offsetParent !== null && h.textContent.trim() === 'Ready to Demonstrate');
+        const existing = document.getElementById('st-print-btn');
+        if (existing) {
+            if (!isRtd) existing.remove();
+            return isRtd;
+        }
+        if (!isRtd) return false;
         const reportBody = document.querySelector('#report-body');
-        if (!reportBody || !reportBody.querySelector('li.divider')) return;
+        if (!reportBody || !reportBody.querySelector('li.divider')) return false;
 
         const btn = document.createElement('button');
         btn.id = 'st-print-btn';
@@ -233,27 +238,31 @@ ${cubSections}
         reportBody.parentNode.insertBefore(btn, reportBody);
 
         document.querySelector('#report-instructions a')?.remove();
+        return true;
     }
 
     // ── SPA-aware Activation ──────────────────────────────────────────────────
 
+    let activeObs = null;
+
     function watchForReport() {
-        const reportBody = document.querySelector('#report-body');
-        if (reportBody) {
-            injectButton();
-            // Watch for data to be injected into #report-body by the SPA
-            const obs = new MutationObserver(injectButton);
-            obs.observe(reportBody, { childList: true });
-        } else {
-            // Wait for #report-body to appear in the DOM
-            const obs = new MutationObserver(() => {
-                if (document.querySelector('#report-body')) {
-                    obs.disconnect();
-                    watchForReport();
-                }
-            });
-            obs.observe(document.body, { childList: true, subtree: true });
+        if (activeObs) {
+            activeObs.disconnect();
+            activeObs = null;
         }
+
+        function tryInject() {
+            if (injectButton()) {
+                activeObs.disconnect();
+                activeObs = null;
+            }
+        }
+
+        // Watch the whole body subtree so we catch h1.name and #report-body
+        // updating in any order — disconnect once the button is successfully injected.
+        activeObs = new MutationObserver(tryInject);
+        activeObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true });
+        tryInject();
     }
 
     watchForReport();
