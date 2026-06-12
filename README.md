@@ -23,12 +23,14 @@ When you open the Ready to Demonstrate report on [scoutstracker.ca](https://scou
 
 ### Step 1 — Download the extension files
 
-Download or copy the `badge-extension` folder to your computer. It should contain two files:
+Download or copy the project to your computer (Code > Download Zip). It should contain the following files:
 
 ```
-badge-extension/
-├── manifest.json
-└── content.js
+badger/
+├── LICENSE
+├── README.md
+├── content.js
+└── manifest.json
 ```
 
 ### Step 2 — Open Chrome Extensions
