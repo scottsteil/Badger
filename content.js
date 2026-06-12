@@ -209,6 +209,8 @@ ${cubSections}
 
     function injectButton() {
         if (document.getElementById('st-print-btn')) return;
+        const heading = document.querySelector('h1.name');
+        if (!heading || heading.textContent.trim() !== 'Ready to Demonstrate') return;
         const reportBody = document.querySelector('#report-body');
         if (!reportBody || !reportBody.querySelector('li.divider')) return;
 
