@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "ScoutsTracker Print Reporter",
+  "version": "1.0",
+  "description": "Reformats the Ready to Demonstrate report into a printable, one-page-per-cub table.",
+  "content_scripts": [
+    {
+      "matches": ["https://scoutstracker.ca/cubs/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
