@@ -83,7 +83,7 @@ The buttons open reports in a new tab. Chrome will block this the first time:
    - **Print** — send to printer in landscape
    - **Copy (TSV)** — copy to clipboard for pasting into Google Sheets
    - **Download for Excel** — download a `.xls` file; double-click it to open in Excel with formatting applied
-   > Note: the file is technically formatted as xml and may cause Excel to complain that the extension doesn't match the file type. The file will still open fine.
+     > The file is technically formatted as xml. This may cause Excel to complain that the extension doesn't match the file type, but it will open fine.
 
 ---
 
