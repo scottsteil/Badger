@@ -324,8 +324,8 @@ td.cub { text-align: center; width: 28px; }
 </head>
 <body>
 <div class="controls no-print">
-  <button class="print-btn" onclick="window.print()">&#128438;&nbsp;Print</button>
-  <button class="copy-btn" onclick="copyTableTSV(this)">&#128203;&nbsp;Copy for Excel</button>
+  <button id="planner-print-btn" class="print-btn">&#128438;&nbsp;Print</button>
+  <button id="planner-copy-btn" class="copy-btn">&#128203;&nbsp;Copy for Excel</button>
 </div>
 <table>
   <thead>
@@ -340,24 +340,6 @@ td.cub { text-align: center; width: 28px; }
   ${rows.join('\n  ')}
   </tbody>
 </table>
-<script>
-function copyTableTSV(btn) {
-  const table = document.querySelector('table');
-  const rows = [];
-  for (const tr of table.querySelectorAll('tr')) {
-    const cells = [...tr.querySelectorAll('th, td')].map(cell => {
-      return cell.textContent.replace(/\t|\n/g, ' ').trim();
-    });
-    rows.push(cells.join('\t'));
-  }
-  navigator.clipboard.writeText(rows.join('\n')).then(function() {
-    const orig = btn.innerHTML;
-    btn.innerHTML = '&#10003;&nbsp;Copied!';
-    btn.disabled = true;
-    setTimeout(function() { btn.innerHTML = orig; btn.disabled = false; }, 2000);
-  });
-}
-<\/script>
 </body>
 </html>`;
     }
@@ -380,6 +362,40 @@ function copyTableTSV(btn) {
         win.document.close();
     }
 
+    function copyPlannerTable(win, btn) {
+        const table = win.document.querySelector('table');
+
+        const tsvRows = [];
+        for (const tr of table.querySelectorAll('tr')) {
+            const cells = [...tr.querySelectorAll('th, td')].map(cell =>
+                cell.textContent.replace(/\t|\n/g, ' ').trim()
+            );
+            tsvRows.push(cells.join('\t'));
+        }
+
+        const clone = table.cloneNode(true);
+        for (const th of clone.querySelectorAll('th.cub')) {
+            th.style.cssText = 'mso-rotate:90; white-space:nowrap;';
+        }
+        const html = '<html><body><table>' + clone.innerHTML + '</table></body></html>';
+
+        const flash = function () {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '&#10003;&nbsp;Copied!';
+            btn.disabled = true;
+            setTimeout(function () { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+        };
+
+        const item = new win.ClipboardItem({
+            'text/plain': new Blob([tsvRows.join('\n')], { type: 'text/plain' }),
+            'text/html':  new Blob([html],               { type: 'text/html'  }),
+        });
+
+        win.navigator.clipboard.write([item]).then(flash).catch(function () {
+            win.navigator.clipboard.writeText(tsvRows.join('\n')).then(flash);
+        });
+    }
+
     function openPlannerView() {
         const data = parsePlannerData();
         if (!data || data.badges.length === 0) {
@@ -394,6 +410,12 @@ function copyTableTSV(btn) {
         }
         win.document.write(html);
         win.document.close();
+        win.document.getElementById('planner-print-btn').addEventListener('click', function () {
+            win.print();
+        });
+        win.document.getElementById('planner-copy-btn').addEventListener('click', function () {
+            copyPlannerTable(win, this);
+        });
     }
 
     // ── Button Injection ──────────────────────────────────────────────────────
