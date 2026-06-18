@@ -23,7 +23,7 @@ When you open the Progression Planner report, the extension adds three buttons:
 
 - **🖨️ Print** — opens a new tab with a formatted grid (badge requirements as rows, Cubs as columns) and prints it in landscape
 - **📋 Copy (TSV)** — copies the table as tab-separated text for pasting into Google Sheets or any spreadsheet
-- **📥 Download for Excel** — downloads a `.xml` file that opens directly in Excel with full formatting: column widths, rotated cub-name headers, grey header background, bold badge/requirement cells, green checkmarks, and a thick dividing line between each badge group
+- **📥 Download for Excel** — downloads a `.xls` file that opens directly in Excel with full formatting: column widths, rotated cub-name headers, grey header background, bold badge/requirement cells, green checkmarks, and a thick dividing line between each badge group
 
 ---
 
@@ -82,7 +82,8 @@ The buttons open reports in a new tab. Chrome will block this the first time:
 3. A new tab opens with the formatted grid — use the buttons at the top to:
    - **Print** — send to printer in landscape
    - **Copy (TSV)** — copy to clipboard for pasting into Google Sheets
-   - **Download for Excel** — download a `.xml` file; double-click it to open in Excel with formatting applied
+   - **Download for Excel** — download a `.xls` file; double-click it to open in Excel with formatting applied
+   > Note: the file is technically formatted as xml and may cause Excel to complain that the extension doesn't match the file type. The file will still open fine.
 
 ---
 
