@@ -464,8 +464,8 @@ td.cub { text-align: center; width: 28px; }
 <Style ss:ID="s0S"><Alignment ss:Vertical="Top" ss:WrapText="1"/>${borders(true)}</Style>
 <Style ss:ID="sB"><Alignment ss:Vertical="Top"/>${borders(false)}<Font ss:Bold="1"/></Style>
 <Style ss:ID="sBS"><Alignment ss:Vertical="Top"/>${borders(true)}<Font ss:Bold="1"/></Style>
-<Style ss:ID="sC"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(false)}</Style>
-<Style ss:ID="sCS"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(true)}</Style>
+<Style ss:ID="sC"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(false)}<Font ss:Color="#008800"/></Style>
+<Style ss:ID="sCS"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(true)}<Font ss:Color="#008800"/></Style>
 <Style ss:ID="sH"><Alignment ss:Horizontal="Left" ss:Vertical="Bottom"/>${borders(false)}<Font ss:Bold="1"/><Interior ss:Color="#E8E8E8" ss:Pattern="Solid"/></Style>
 <Style ss:ID="sHC"><Alignment ss:Horizontal="Center" ss:Vertical="Bottom" ss:Rotate="90"/>${borders(false)}<Font ss:Bold="0"/><Interior ss:Color="#E8E8E8" ss:Pattern="Solid"/></Style>
 </Styles>`;
