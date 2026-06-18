@@ -1,19 +1,29 @@
 # Badger
 ### ScoutsTracker Report Print Formatter
 
-A Chrome extension that adds a **🖨️ Print Formatted Report** button to the ScoutsTracker "Ready to Demonstrate" report, giving you a clean, printable checklist — one page per Cub — that you can use at meetings or copy into Excel.
+A Chrome extension that enhances two ScoutsTracker reports with print and Excel export buttons: namely the "Ready to Demonstrate" and "Progression Planner" reports.
 
 ---
 
 ## What it does
 
-When you open the Ready to Demonstrate report on [scoutstracker.ca](https://scoutstracker.ca/cubs/#report), the extension adds a **Print Formatted Report** button above the list. Clicking it opens a new tab with the Ready to Demonstrate data formatted in a more printer friendly format. 
+### Ready to Demonstrate report
+
+When you open the Ready to Demonstrate report, the extension adds a **🖨️ Print Formatted Report** button above the list. Clicking it opens a new tab with a clean, printable checklist.
 
 - One page per Cub (with proper page breaks when printing)
 - One table per badge, showing only the outstanding requirements
 - A checkbox for each skill so you can tick them off as Cubs demonstrate
 - An **Awarded** checkbox in each badge heading to sign off the whole badge
 - Badges where these are the **final requirements** highlighted in amber
+
+### Progression Planner report
+
+When you open the Progression Planner report, the extension adds three buttons:
+
+- **🖨️ Print** — opens a new tab with a formatted grid (badge requirements as rows, Cubs as columns) and prints it in landscape
+- **📋 Copy (TSV)** — copies the table as tab-separated text for pasting into Google Sheets or any spreadsheet
+- **📥 Download for Excel** — downloads a `.xml` file that opens directly in Excel with full formatting: column widths, rotated cub-name headers, grey header background, bold badge/requirement cells, green checkmarks, and a thick dividing line between each badge group
 
 ---
 
@@ -47,28 +57,39 @@ badger/
 
 ### Step 4 — Allow pop-ups (first time only)
 
-The Print Report button opens in a new tab. Chrome will block this the first time:
+The buttons open reports in a new tab. Chrome will block this the first time:
 
-1. After clicking **Print Report**, look for the blocked pop-up icon in the address bar
+1. After clicking a report button, look for the blocked pop-up icon in the address bar
 2. Click it and choose **Always allow pop-ups from scoutstracker.ca**
-3. Click **Print Report** again — it will work from now on
+3. Click the button again — it will work from now on
 
 ---
 
 ## How to use it
 
+### Ready to Demonstrate
+
 1. Go to [scoutstracker.ca](https://scoutstracker.ca/cubs/) and log in
 2. Navigate to **Reports → Ready to Demonstrate**
 3. Click the green **🖨️ Print Formatted Report** button that appears above the list
 4. A new tab opens with the formatted report
-5. Click **Print** (or use `Ctrl+P` / `Cmd+P`) to print, or select and copy the tables into Excel
+5. Click **Print** (or use `Ctrl+P` / `Cmd+P`) to print
+
+### Progression Planner
+
+1. Navigate to **Reports → Progression Planner**
+2. Click the green **🖨️ Print Progression Planner** button that appears above the table
+3. A new tab opens with the formatted grid — use the buttons at the top to:
+   - **Print** — send to printer in landscape
+   - **Copy (TSV)** — copy to clipboard for pasting into Google Sheets
+   - **Download for Excel** — download a `.xml` file; double-click it to open in Excel with formatting applied
 
 ---
 
 ## Troubleshooting
 
-**The Print Report button doesn't appear**
-- Make sure you are on the *Ready to Demonstrate* report, not another report type
+**A button doesn't appear**
+- Make sure you are on the correct report page
 - Try refreshing the page
 - Check that the extension is enabled at `chrome://extensions`
 
