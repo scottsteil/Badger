@@ -258,6 +258,11 @@ body { font-family: Arial, sans-serif; font-size: 12px; padding: 16px; color: #0
   background: #1a6b3c; color: #fff; border: none; border-radius: 4px;
 }
 .controls .print-btn:hover { background: #155530; }
+.controls .copy-btn {
+  padding: 8px 16px; font-size: 13px; cursor: pointer;
+  background: #2a6496; color: #fff; border: none; border-radius: 4px;
+}
+.controls .copy-btn:hover { background: #1f4d72; }
 
 table { width: 100%; border-collapse: collapse; }
 th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-align: left; }
@@ -265,6 +270,7 @@ th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-ali
 thead th {
   background: #e8e8e8; font-weight: bold; white-space: nowrap;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  vertical-align: middle;
 }
 thead th.cub {
   text-align: left;
@@ -279,7 +285,7 @@ thead th.cub {
 tr.badge-row td { background: #d4e8d4; font-weight: bold; font-size: 0.9rem;
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-tr.badge-start td { border-top: 2px solid #555; }
+tr.badge-start td { border-top: 2px solid #000; }
 
 td.req-num { width: 48px; white-space: nowrap; font-weight: bold; }
 td.req-badge { width: 160px; white-space: nowrap; }
@@ -319,6 +325,7 @@ td.cub { text-align: center; width: 28px; }
 <body>
 <div class="controls no-print">
   <button class="print-btn" onclick="window.print()">&#128438;&nbsp;Print</button>
+  <button class="copy-btn" onclick="copyTableTSV(this)">&#128203;&nbsp;Copy for Excel</button>
 </div>
 <table>
   <thead>
@@ -333,6 +340,24 @@ td.cub { text-align: center; width: 28px; }
   ${rows.join('\n  ')}
   </tbody>
 </table>
+<script>
+function copyTableTSV(btn) {
+  const table = document.querySelector('table');
+  const rows = [];
+  for (const tr of table.querySelectorAll('tr')) {
+    const cells = [...tr.querySelectorAll('th, td')].map(cell => {
+      return cell.textContent.replace(/\t|\n/g, ' ').trim();
+    });
+    rows.push(cells.join('\t'));
+  }
+  navigator.clipboard.writeText(rows.join('\n')).then(function() {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&#10003;&nbsp;Copied!';
+    btn.disabled = true;
+    setTimeout(function() { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+  });
+}
+<\/script>
 </body>
 </html>`;
     }
