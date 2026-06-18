@@ -365,6 +365,7 @@ td.cub { text-align: center; width: 28px; }
     function copyPlannerTable(win, btn) {
         const table = win.document.querySelector('table');
 
+        // TSV for plain-text fallback
         const tsvRows = [];
         for (const tr of table.querySelectorAll('tr')) {
             const cells = [...tr.querySelectorAll('th, td')].map(cell =>
@@ -373,11 +374,43 @@ td.cub { text-align: center; width: 28px; }
             tsvRows.push(cells.join('\t'));
         }
 
-        const clone = table.cloneNode(true);
-        for (const th of clone.querySelectorAll('th.cub')) {
-            th.style.cssText = 'mso-rotate:90; white-space:nowrap;';
-        }
-        const html = '<html><body><table>' + clone.innerHTML + '</table></body></html>';
+        // Build a fresh HTML table with every style inlined so Excel sees them.
+        // CSS classes are ignored by Excel's HTML paste — only inline styles work.
+        const S = {
+            thBase: 'background:#e8e8e8; border:1px solid #bbb; font-weight:bold; padding:4px 6px; vertical-align:bottom;',
+            thCub: 'background:#e8e8e8; border:1px solid #bbb; font-weight:bold; padding:4px 2px; white-space:nowrap; mso-rotate:90; vertical-align:bottom;',
+            tdBase: 'border:1px solid #bbb; padding:4px 6px; vertical-align:top;',
+            tdBold: 'border:1px solid #bbb; padding:4px 6px; vertical-align:top; font-weight:bold; white-space:nowrap;',
+            tdCenter: 'border:1px solid #bbb; padding:4px 6px; text-align:center; vertical-align:top; color:#080;',
+            sepTop: 'border-top:2px solid #555;',
+        };
+
+        const headerThs = [...table.querySelectorAll('thead th')];
+
+        // Column widths in pixels. Excel reads width attributes from the first row.
+        // Fixed: Badge=126, Req#=42, Requirement=767. Cub columns=26 each.
+        const colWidths = [126, 42, 767];
+        const headerCells = headerThs.map((th, i) => {
+            const w = i < 3 ? colWidths[i] : 26;
+            const style = th.classList.contains('cub') ? S.thCub : S.thBase;
+            return `<th width="${w}" style="${style}">${th.textContent.trim()}</th>`;
+        }).join('');
+
+        const bodyRows = [...table.querySelectorAll('tbody tr')].map(tr => {
+            const sep = tr.classList.contains('badge-start') ? S.sepTop : '';
+            const cells = [...tr.querySelectorAll('td')].map(td => {
+                let base = td.classList.contains('cub') ? S.tdCenter
+                    : (td.classList.contains('req-badge') || td.classList.contains('req-num')) ? S.tdBold
+                        : S.tdBase;
+                return `<td style="${base}${sep}">${td.textContent.trim()}</td>`;
+            }).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+
+        const html = `<html><body><table border="1" style="border-collapse:collapse;">`
+            + `<thead><tr>${headerCells}</tr></thead>`
+            + `<tbody>${bodyRows}</tbody>`
+            + `</table></body></html>`;
 
         const flash = function () {
             const orig = btn.innerHTML;
@@ -388,7 +421,7 @@ td.cub { text-align: center; width: 28px; }
 
         const item = new win.ClipboardItem({
             'text/plain': new Blob([tsvRows.join('\n')], { type: 'text/plain' }),
-            'text/html':  new Blob([html],               { type: 'text/html'  }),
+            'text/html': new Blob([html], { type: 'text/html' }),
         });
 
         win.navigator.clipboard.write([item]).then(flash).catch(function () {
