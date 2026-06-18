@@ -263,6 +263,11 @@ body { font-family: Arial, sans-serif; font-size: 12px; padding: 16px; color: #0
   background: #2a6496; color: #fff; border: none; border-radius: 4px;
 }
 .controls .copy-btn:hover { background: #1f4d72; }
+.controls .dl-btn {
+  padding: 8px 16px; font-size: 13px; cursor: pointer;
+  background: #6a3d9a; color: #fff; border: none; border-radius: 4px;
+}
+.controls .dl-btn:hover { background: #522e78; }
 
 table { width: 100%; border-collapse: collapse; }
 th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-align: left; }
@@ -325,7 +330,8 @@ td.cub { text-align: center; width: 28px; }
 <body>
 <div class="controls no-print">
   <button id="planner-print-btn" class="print-btn">&#128438;&nbsp;Print</button>
-  <button id="planner-copy-btn" class="copy-btn">&#128203;&nbsp;Copy for Excel</button>
+  <button id="planner-copy-btn" class="copy-btn">&#128203;&nbsp;Copy (TSV)</button>
+  <button id="planner-dl-btn" class="dl-btn">&#128229;&nbsp;Download for Excel</button>
 </div>
 <table>
   <thead>
@@ -429,6 +435,90 @@ td.cub { text-align: center; width: 28px; }
         });
     }
 
+    function downloadPlannerXLS(win) {
+        const table = win.document.querySelector('table');
+        const headerThs = [...table.querySelectorAll('thead th')];
+        const cubCount = headerThs.filter(th => th.classList.contains('cub')).length;
+
+        function escXml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function borders(thickTop) {
+            const top = thickTop
+                ? '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#555555"/>'
+                : '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBBBBB"/>';
+            return `<Borders>${top}<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBBBBB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBBBBB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBBBBB"/></Borders>`;
+        }
+
+        // Each style has a badge-start (S) variant with a thicker top border.
+        // "Default" ss:Name="Normal" is required by Excel to validate the file.
+        // Child element order within <Style> is schema-enforced: Alignment, Borders, Font, Interior.
+        const styles = `<Styles>
+<Style ss:ID="Default" ss:Name="Normal"/>
+<Style ss:ID="s0"><Alignment ss:Vertical="Top" ss:WrapText="1"/>${borders(false)}</Style>
+<Style ss:ID="s0S"><Alignment ss:Vertical="Top" ss:WrapText="1"/>${borders(true)}</Style>
+<Style ss:ID="sB"><Alignment ss:Vertical="Top"/>${borders(false)}<Font ss:Bold="1"/></Style>
+<Style ss:ID="sBS"><Alignment ss:Vertical="Top"/>${borders(true)}<Font ss:Bold="1"/></Style>
+<Style ss:ID="sC"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(false)}</Style>
+<Style ss:ID="sCS"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/>${borders(true)}</Style>
+<Style ss:ID="sH"><Alignment ss:Horizontal="Left" ss:Vertical="Bottom"/>${borders(false)}<Font ss:Bold="1"/><Interior ss:Color="#E8E8E8" ss:Pattern="Solid"/></Style>
+<Style ss:ID="sHC"><Alignment ss:Horizontal="Center" ss:Vertical="Bottom" ss:Rotate="90"/>${borders(false)}<Font ss:Bold="0"/><Interior ss:Color="#E8E8E8" ss:Pattern="Solid"/></Style>
+</Styles>`;
+
+        // Column widths in points (px * 0.75): Badge=94.5, Req#=31.5, Requirement=575, Cub=19.5
+        const cols = '<Column ss:Width="94.5"/><Column ss:Width="31.5"/><Column ss:Width="575"/>'
+            + '<Column ss:Width="19.5"/>'.repeat(cubCount);
+
+        const headerRow = '<Row ss:AutoFitHeight="1">'
+            + headerThs.map(th => {
+                const style = th.classList.contains('cub') ? 'sHC' : 'sH';
+                return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${escXml(th.textContent.trim())}</Data></Cell>`;
+            }).join('')
+            + '</Row>';
+
+        const dataRows = [...table.querySelectorAll('tbody tr')].map(tr => {
+            const S = tr.classList.contains('badge-start');
+            const cells = [...tr.querySelectorAll('td')].map(td => {
+                const style = td.classList.contains('cub') ? (S ? 'sCS' : 'sC')
+                    : (td.classList.contains('req-badge') || td.classList.contains('req-num')) ? (S ? 'sBS' : 'sB')
+                        : (S ? 's0S' : 's0');
+                return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${escXml(td.textContent.trim())}</Data></Cell>`;
+            }).join('');
+            return `<Row>${cells}</Row>`;
+        }).join('');
+
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>`
+            + `<?mso-application progid="Excel.Sheet"?>`
+            + `<Workbook`
+            + ` xmlns="urn:schemas-microsoft-com:office:spreadsheet"`
+            + ` xmlns:o="urn:schemas-microsoft-com:office:office"`
+            + ` xmlns:x="urn:schemas-microsoft-com:office:excel"`
+            + ` xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"`
+            + ` xmlns:html="http://www.w3.org/TR/REC-html40">`
+            + styles
+            + `<Worksheet ss:Name="Progression Planner">`
+            + `<Table x:FullColumns="1" x:FullRows="1">${cols}${headerRow}${dataRows}</Table>`
+            + `<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">`
+            + `<PageSetup><Layout x:Orientation="Landscape"/></PageSetup>`
+            + `</WorksheetOptions>`
+            + `</Worksheet></Workbook>`;
+
+        const blob = new win.Blob([xml], { type: 'application/vnd.ms-excel' });
+        const url = win.URL.createObjectURL(blob);
+        const a = win.document.createElement('a');
+        a.href = url;
+        a.download = 'progression-planner.xls';
+        win.document.body.appendChild(a);
+        a.click();
+        win.document.body.removeChild(a);
+        win.URL.revokeObjectURL(url);
+    }
+
     function openPlannerView() {
         const data = parsePlannerData();
         if (!data || data.badges.length === 0) {
@@ -448,6 +538,9 @@ td.cub { text-align: center; width: 28px; }
         });
         win.document.getElementById('planner-copy-btn').addEventListener('click', function () {
             copyPlannerTable(win, this);
+        });
+        win.document.getElementById('planner-dl-btn').addEventListener('click', function () {
+            downloadPlannerXLS(win);
         });
     }
 
