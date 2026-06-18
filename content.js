@@ -187,6 +187,156 @@ ${cubSections}
 </html>`;
     }
 
+    // ── Progression Planner Parsing ───────────────────────────────────────────
+
+    function parsePlannerData() {
+        const table = document.querySelector('#table-report-body table');
+        if (!table) return null;
+
+        // The on-screen sticky header is the first tr in tbody (the thead one is print-only)
+        const headerRow = table.querySelector('tbody tr.sticky-row');
+        if (!headerRow) return null;
+
+        const cubs = [];
+        for (const td of headerRow.querySelectorAll('td.caption')) {
+            if (td.classList.contains('spacer')) continue;
+            const title = td.getAttribute('title');
+            if (title && title.trim()) cubs.push(title.trim());
+        }
+        if (cubs.length === 0) return null;
+
+        const badges = [];
+        let currentBadge = null;
+
+        for (const row of table.querySelectorAll('tbody tr')) {
+            if (row.classList.contains('sticky-row')) continue;
+
+            const dividerCell = row.querySelector('td.divider');
+            if (dividerCell) {
+                const nameEl = dividerCell.querySelector('span.name');
+                currentBadge = { name: nameEl ? nameEl.textContent.trim() : '', requirements: [] };
+                badges.push(currentBadge);
+                continue;
+            }
+
+            if (!row.hasAttribute('data-reqid') || !currentBadge) continue;
+
+            const reqNumEl = row.querySelector('td.reqnum');
+            const stickyEls = row.querySelectorAll('td.sticky-col');
+            // stickyEls[0] = req num col, stickyEls[1] = req text col
+            const textTd = stickyEls.length >= 2 ? stickyEls[1] : null;
+
+            const num = reqNumEl ? reqNumEl.textContent.trim().replace(/^#/, '') : '';
+            const text = textTd ? (textTd.getAttribute('title') || textTd.textContent.trim()) : '';
+
+            const completions = [];
+            for (const td of row.querySelectorAll('td.white')) {
+                completions.push(td.classList.contains('y'));
+            }
+
+            if (completions.length === cubs.length) {
+                currentBadge.requirements.push({ num, text, completions });
+            }
+        }
+
+        return { cubs, badges };
+    }
+
+    // ── Progression Planner HTML Generation ──────────────────────────────────
+
+    const PLANNER_CSS = `
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; font-size: 12px; padding: 16px; color: #000; }
+
+.controls {
+  margin-bottom: 16px; padding: 10px 14px;
+  background: #f0f4f0; border: 1px solid #c8d8c8; border-radius: 6px;
+  display: flex; align-items: center; gap: 16px;
+}
+.controls .print-btn {
+  padding: 8px 16px; font-size: 13px; cursor: pointer;
+  background: #1a6b3c; color: #fff; border: none; border-radius: 4px;
+}
+.controls .print-btn:hover { background: #155530; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-align: left; }
+
+thead th {
+  background: #e8e8e8; font-weight: bold; white-space: nowrap;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+thead th.cub {
+  text-align: left;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  vertical-align: bottom;
+  padding: 4px 2px;
+  line-height: 1.7em;
+}
+
+tr.badge-row td { background: #d4e8d4; font-weight: bold; font-size: 0.9rem;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+tr.badge-start td { border-top: 2px solid #555; }
+
+td.req-num { width: 48px; white-space: nowrap; font-weight: bold; }
+td.req-badge { width: 160px; white-space: nowrap; }
+td.cub { text-align: center; width: 28px; }
+
+@page { size: landscape; margin: 12mm; }
+@media print {
+  .no-print { display: none !important; }
+  body { padding: 4px; font-size: 11px; }
+}`;
+
+    function buildPlannerHTML(data) {
+        const cubHeaders = data.cubs.map(name => `<th class="cub">${escHtml(name)}</th>`).join('');
+
+        const rows = [];
+        for (const badge of data.badges) {
+            let firstRow = true;
+            for (const req of badge.requirements) {
+                const cells = req.completions.map(done => `<td class="cub">${done ? '&#10003;' : ''}</td>`).join('');
+                rows.push(`<tr${firstRow ? ' class="badge-start"' : ''}>
+    <td class="req-badge">${escHtml(badge.name)}</td>
+    <td class="req-num">${escHtml(req.num)}</td>
+    <td>${escHtml(req.text)}</td>
+    ${cells}
+  </tr>`);
+                firstRow = false;
+            }
+        }
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Progression Planner</title>
+<style>${PLANNER_CSS}</style>
+</head>
+<body>
+<div class="controls no-print">
+  <button class="print-btn" onclick="window.print()">&#128438;&nbsp;Print</button>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>Badge</th>
+      <th>Req #</th>
+      <th>Requirement</th>
+      ${cubHeaders}
+    </tr>
+  </thead>
+  <tbody>
+  ${rows.join('\n  ')}
+  </tbody>
+</table>
+</body>
+</html>`;
+    }
+
     // ── Button Actions ────────────────────────────────────────────────────────
 
     function openPrintView() {
@@ -196,6 +346,22 @@ ${cubSections}
             return;
         }
         const html = buildHTML(cubs);
+        const win = window.open('', '_blank');
+        if (!win) {
+            alert('Pop-up blocked. Please allow pop-ups for scoutstracker.ca and try again.');
+            return;
+        }
+        win.document.write(html);
+        win.document.close();
+    }
+
+    function openPlannerView() {
+        const data = parsePlannerData();
+        if (!data || data.badges.length === 0) {
+            alert('No report data found. Make sure the Progression Planner report is loaded.');
+            return;
+        }
+        const html = buildPlannerHTML(data);
         const win = window.open('', '_blank');
         if (!win) {
             alert('Pop-up blocked. Please allow pop-ups for scoutstracker.ca and try again.');
@@ -241,6 +407,38 @@ ${cubSections}
         return true;
     }
 
+    function injectPlannerButton() {
+        const isPlanner = [...document.querySelectorAll('h1.name')]
+            .some(h => h.offsetParent !== null && h.textContent.trim() === 'Progression Planner');
+        const existing = document.getElementById('st-planner-btn');
+        if (existing) {
+            if (!isPlanner) existing.remove();
+            return isPlanner;
+        }
+        if (!isPlanner) return false;
+        const reportBody = document.querySelector('#table-report-body');
+        if (!reportBody || !reportBody.querySelector('tr[data-reqid]')) return false;
+
+        const btn = document.createElement('button');
+        btn.id = 'st-planner-btn';
+        btn.innerHTML = '&#128438;&nbsp;Export Formatted Report';
+        Object.assign(btn.style, {
+            margin: '15px 10px 1em 10px',
+            padding: '8px 18px',
+            fontSize: '14px',
+            cursor: 'pointer',
+            background: 'var(--color-background-divider)',
+            color: 'var(--color-divider)',
+            border: 'none',
+            borderRadius: '4px',
+            display: 'block',
+            boxShadow: 'rgba(0,0,0, .7) 2px 2px 4px',
+        });
+        btn.addEventListener('click', openPlannerView);
+        reportBody.parentNode.insertBefore(btn, reportBody);
+        return true;
+    }
+
     // ── SPA-aware Activation ──────────────────────────────────────────────────
 
     let activeObs = null;
@@ -252,7 +450,9 @@ ${cubSections}
         }
 
         function tryInject() {
-            if (injectButton()) {
+            const rtdDone = injectButton();
+            const plannerDone = injectPlannerButton();
+            if (rtdDone || plannerDone) {
                 activeObs.disconnect();
                 activeObs = null;
             }
@@ -269,8 +469,8 @@ ${cubSections}
 
     // Re-check on SPA hash navigation
     window.addEventListener('hashchange', () => {
-        const existing = document.getElementById('st-print-btn');
-        if (existing) existing.remove();
+        document.getElementById('st-print-btn')?.remove();
+        document.getElementById('st-planner-btn')?.remove();
         watchForReport();
     });
 })();
